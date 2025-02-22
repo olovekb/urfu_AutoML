@@ -19,7 +19,7 @@ test_data[['temp']] = scaler_temp.transform(test_data[['temp']])
 test_data[['humidity']] = scaler_humidity.transform(test_data[['humidity']])
 
 # Сохранение предобработанных данных
-train_data.to_csv('train/train_scaled.csv', index=False)
-test_data.to_csv('test/test_scaled.csv', index=False)
+train_data.to_csv('train/train_data_scaled.csv', index=False)
+test_data.to_csv('test/test_data_scaled.csv', index=False)
 
 print("Data preprocessing completed.")
