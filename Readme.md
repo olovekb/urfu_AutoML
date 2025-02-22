@@ -24,10 +24,12 @@
 
 2. data_preprocessing.py
 · Загружает данные из train/train_data.csv и test/test_data.csv.
+
 · Масштабирует температуру и влажность с помощью StandardScaler.
+
 · Сохраняет обработанные данные (train/train_data_scaled.csv и test/test_data_scaled.csv).
 
-3. model_preparation.py
+4. model_preparation.py
 
 · Загружает нормализованные данные train/train_data_scaled.csv.
 · Преобразует day в синус и косинус (циклические признаки).
