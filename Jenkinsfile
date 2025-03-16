@@ -12,10 +12,12 @@ pipeline {
         }
         stage('Install Dependencies') {
             steps {
-                // Создаём виртуальное окружение и устанавливаем зависимости
+                // Создаём виртуальное окружение
                 bat 'python -m venv venv'
-                bat 'venv\\Scripts\\pip install --upgrade pip'
-                bat 'venv\\Scripts\\pip install -r requirements.txt'
+                // Обновляем pip, используя python -m pip
+                bat 'venv\\Scripts\\python -m pip install --upgrade pip'
+                // Устанавливаем зависимости
+                bat 'venv\\Scripts\\python -m pip install -r requirements.txt'
             }
         }
         stage('Run data_creation.py') {
