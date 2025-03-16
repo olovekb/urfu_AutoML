@@ -4,8 +4,11 @@ pipeline {
         stage('Checkout') {
             steps {
                 // Получаем код из репозитория
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']], ... ])
-                  userRemoteConfigs: [[url: 'https://github.com/olovekb/urfu_AutoML.git']]])
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/olovekb/urfu_AutoML.git']]
+                ])
             }
         }
         stage('Install Dependencies') {
