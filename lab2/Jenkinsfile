@@ -14,7 +14,7 @@ pipeline {
         }
         stage('Install Dependencies') {
             steps {
-                // Создаём виртуальное окружение в папке venv
+                // Создаём виртуальное окружение
                 bat 'python -m venv venv'
                 
                 // Обновляем pip
