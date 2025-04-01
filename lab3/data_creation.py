@@ -9,7 +9,7 @@ def create_dataset(file_path, num_points=100, noise=1.0, anomaly=False):
     # Синусоидальная зависимость температуры с добавлением шума
     temp = 10 + 10 * np.sin(2 * np.pi * days / 30) + np.random.normal(0, noise, size=num_points)
     if anomaly:
-        # Добавляем аномалии (спайки)
+        # Добавляем аномалии 
         num_anomalies = max(1, num_points // 20)
         indices = np.random.choice(num_points, num_anomalies, replace=False)
         temp[indices] += np.random.normal(20, 5, size=num_anomalies)
@@ -21,5 +21,5 @@ def create_dataset(file_path, num_points=100, noise=1.0, anomaly=False):
     print(f"Data saved to {file_path}")
 
 if __name__ == "__main__":
-    # Пример генерации данных для обучения
+    # Генерация данных для обучения
     create_dataset("train/train_data.csv", num_points=100, noise=1.0, anomaly=True)
