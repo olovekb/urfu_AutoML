@@ -5,7 +5,7 @@ import pickle
 from sklearn.metrics import mean_squared_error, r2_score
 
 # Загружаем масштабированные данные для теста
-df_test = pd.read_csv("test/test_data_scaled.csv")
+df_test = pd.read_csv("./data/test/test_data_scaled.csv")
 
 # Формируем те же признаки
 X_test = pd.DataFrame()
@@ -16,7 +16,7 @@ X_test['humidity'] = df_test['humidity']
 y_test = df_test['temp']
 
 # Загружаем сохранённую модель
-with open("model.pkl", "rb") as f:
+with open("./models/model.pkl", "rb") as f:
     model = pickle.load(f)
 
 # Выполняем предсказание и оцениваем качество
