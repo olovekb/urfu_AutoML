@@ -1,10 +1,11 @@
 pipeline {
-  // Пайплайн будет выполняться внутри Linux-контейнера python:3.9-slim
-  agent {
-    docker {
-      image 'python:3.9-slim'
-      args  '-v /var/run/docker.sock:/var/run/docker.sock'
-    }
+  // Запускаем на любой Windows-ноде, помеченной лейблом “windows”
+  agent { label 'windows' }
+
+  // Указываем корневую папку рабочей области в корне диска, чтобы сократить глубину путей
+  options {
+    // Имя папки можно выбрать любое, важно, чтобы путь был коротким
+    customWorkspace 'C:/jenkins_ws/URFU_AutoML'
   }
 
   environment {
@@ -19,97 +20,98 @@ pipeline {
       steps {
         checkout([
           $class: 'GitSCM',
-          branches: [[ name: '*/FinalTask-back' ]],
-          userRemoteConfigs: [[ url: 'https://github.com/olovekb/urfu_AutoML.git' ]]
+          branches: [[name: '*/FinalTask-back']],
+          userRemoteConfigs:[[ url: 'https://github.com/olovekb/urfu_AutoML.git' ]]
         ])
       }
     }
 
-    stage('Setup Env & DVC') {
+    stage('Setup Python & DVC') {
       steps {
-        sh '''
-          # 1) создаём виртуальное окружение
-          python3 -m venv venv
-          . venv/bin/activate
+        bat """
+          REM — создаём виртуалку
+          python -m venv venv
 
-          # 2) обновляем pip и ставим зависимости + DVC
-          pip install --upgrade pip
+          call venv\\Scripts\\activate
+
+          REM — понижаем pip до 24.0, чтобы GE ставился корректно
+          pip install --upgrade pip==24.0
+
+          REM — устанавливаем зависимости проекта + DVC + pytest
           pip install -r requirements.txt dvc[gdrive] pytest
 
-          # 3) настраиваем DVC remote для GDrive через сервис-аккаунт
-          dvc remote modify $DVC_REMOTE gdrive_use_service_account true
-          dvc remote modify $DVC_REMOTE gdrive_service_account_json_file_path $GDRIVE_KEY
-        '''
+          REM — ставим конкретную версию GE, у которой не ломается metadata
+          pip install great_expectations==0.18.21
+
+          REM — настраиваем DVC для работы с JSON-ключом
+          dvc remote modify %DVC_REMOTE% gdrive_use_service_account true
+          dvc remote modify %DVC_REMOTE% gdrive_service_account_json_file_path %GDRIVE_KEY%
+        """
       }
     }
 
-    stage('DVC Pull') {
+    stage('DVC Pull Data') {
       steps {
-        sh '''
-          . venv/bin/activate
-          dvc pull -r $DVC_REMOTE
-        '''
+        bat """
+          call venv\\Scripts\\activate
+          dvc pull -r %DVC_REMOTE%
+        """
       }
     }
 
     stage('Generate & Track Raw Data') {
       steps {
-        sh '''
-          . venv/bin/activate
-          python src/data_creation.py
-          dvc add data/train/train_data.csv data/test/test_data.csv
-        '''
+        bat """
+          call venv\\Scripts\\activate
+          python src\\data_creation.py
+          dvc add data\\train\\train_data.csv data\\test\\test_data.csv
+        """
       }
     }
 
-    stage('Preprocess & Track Data') {
+    stage('Preprocess & Track Processed Data') {
       steps {
-        sh '''
-          . venv/bin/activate
-          python src/data_preprocessing.py
-          dvc add data/train/train_data_scaled.csv data/test/test_data_scaled.csv
-        '''
+        bat """
+          call venv\\Scripts\\activate
+          python src\\data_preprocessing.py
+          dvc add data\\train\\train_data_scaled.csv data\\test\\test_data_scaled.csv
+        """
       }
     }
 
     stage('Data Quality Checks') {
       steps {
-        sh '''
-          . venv/bin/activate
-          # Если нужен Great Expectations — раскомментируйте
-          # pip install great_expectations
-          # great_expectations checkpoint run default
-        '''
+        bat """
+          call venv\\Scripts\\activate
+          great_expectations checkpoint run default
+        """
       }
     }
 
     stage('Unit & Data Tests') {
       steps {
-        sh '''
-          . venv/bin/activate
-          pytest --junitxml=reports/junit.xml
-        '''
+        bat """
+          call venv\\Scripts\\activate
+          pytest --junitxml=reports\\junit.xml
+        """
       }
     }
 
-    stage('Push Data') {
+    stage('Push Data to Remote') {
       steps {
-        sh '''
-          . venv/bin/activate
-          dvc push -r $DVC_REMOTE
-        '''
+        bat """
+          call venv\\Scripts\\activate
+          dvc push -r %DVC_REMOTE%
+        """
       }
     }
 
-    stage('Build & Push Docker') {
+    stage('Build & Push Docker Image') {
       steps {
-        sh '''
-          # Собираем и пушим образ
-          docker build \
-            --build-arg VENV_DIR=venv \
-            -t $IMAGE_NAME:$BUILD_NUMBER .
-          docker push $IMAGE_NAME:$BUILD_NUMBER
-        '''
+        bat """
+          docker build --build-arg VENV_DIR=venv -t %IMAGE_NAME%:%BUILD_NUMBER% .
+          docker push %IMAGE_NAME%:%BUILD_NUMBER%
+        """
       }
     }
   }
@@ -119,11 +121,7 @@ pipeline {
       archiveArtifacts artifacts: 'reports/**/*.xml', allowEmptyArchive: true
       junit 'reports/junit.xml'
     }
-    success {
-      echo '✅ Pipeline succeeded'
-    }
-    failure {
-      echo '❌ Pipeline failed, check log'
-    }
+    success { echo '✅ Pipeline succeeded' }
+    failure { echo '❌ Pipeline failed—смотрите логи выше' }
   }
 }
