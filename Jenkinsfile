@@ -1,15 +1,13 @@
 pipeline {
-  agent { label 'windows' }
-
-  options {
-    // Устанавливаем короткий путь рабочей области через опцию ws
-    ws('C:\\jenkins_ws\\URFU_AutoML')
-  }
+  agent any
 
   environment {
+    // Имя DVC-remote из .dvc/config
     DVC_REMOTE      = 'storage'
+    // Docker registry и имя образа
     DOCKER_REGISTRY = 'registry.example.com'
     IMAGE_NAME      = "${DOCKER_REGISTRY}/urfu-automl-app"
+    // Jenkins-credential типа “Secret file” с вашим ключом
     GDRIVE_KEY      = credentials('gdrive-service-account-json')
   }
 
