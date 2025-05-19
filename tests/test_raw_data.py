@@ -8,7 +8,7 @@ ALLOWED_CITIES = [
 
 # Тесты для тренировочных данных
 def test_raw_train_data():
-    df = pd.read_csv("FinalTask/data/train/train_data.csv")
+    df = pd.read_csv("data/train/train_data.csv")
 
     assert not df.isnull().values.any(), "Есть пропуски в данных"
     assert pd.api.types.is_integer_dtype(df['day']), "Колонка 'day' не целочисленная"
@@ -54,7 +54,7 @@ def test_raw_train_data():
 
 # Тесты для тестовых данных    
 def test_raw_test_data():
-    df = pd.read_csv("FinalTask/data/test/test_data.csv")
+    df = pd.read_csv("data/test/test_data.csv")
 
     assert not df.isnull().values.any(), "Есть пропуски в тестовых данных"
     assert pd.api.types.is_integer_dtype(df['day']), "Колонка 'day' не целочисленная в тестовых данных"
