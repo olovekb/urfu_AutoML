@@ -1,11 +1,9 @@
 pipeline {
-  // Запускаем на любой Windows-ноде, помеченной лейблом “windows”
-  agent { label 'windows' }
-
-  // Указываем корневую папку рабочей области в корне диска, чтобы сократить глубину путей
-  options {
-    // Имя папки можно выбрать любое, важно, чтобы путь был коротким
-    customWorkspace 'C:/jenkins_ws/URFU_AutoML'
+  // Переключаемся на Windows-нод с коротким путем рабочего каталога
+  agent {
+    label 'windows'
+    // Папка на корне диска, чтобы избежать длинных путей
+    customWorkspace 'C:\\jenkins_ws\\URFU_AutoML'
   }
 
   environment {
@@ -18,10 +16,11 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
+        // Клонируем нужную ветку в короткую папку
         checkout([
           $class: 'GitSCM',
           branches: [[name: '*/FinalTask-back']],
-          userRemoteConfigs:[[ url: 'https://github.com/olovekb/urfu_AutoML.git' ]]
+          userRemoteConfigs: [[ url: 'https://github.com/olovekb/urfu_AutoML.git' ]]
         ])
       }
     }
@@ -29,21 +28,18 @@ pipeline {
     stage('Setup Python & DVC') {
       steps {
         bat """
-          REM — создаём виртуалку
+          REM создаём и активируем виртуальное окружение
           python -m venv venv
-
           call venv\\Scripts\\activate
 
-          REM — понижаем pip до 24.0, чтобы GE ставился корректно
+          REM понижаем pip, чтобы Great Expectations ставился корректно
           pip install --upgrade pip==24.0
 
-          REM — устанавливаем зависимости проекта + DVC + pytest
+          REM ставим зависимости + DVC + pytest + фиксированную версию GE
           pip install -r requirements.txt dvc[gdrive] pytest
-
-          REM — ставим конкретную версию GE, у которой не ломается metadata
           pip install great_expectations==0.18.21
 
-          REM — настраиваем DVC для работы с JSON-ключом
+          REM настраиваем DVC для работы через сервис-аккаунт
           dvc remote modify %DVC_REMOTE% gdrive_use_service_account true
           dvc remote modify %DVC_REMOTE% gdrive_service_account_json_file_path %GDRIVE_KEY%
         """
@@ -121,7 +117,11 @@ pipeline {
       archiveArtifacts artifacts: 'reports/**/*.xml', allowEmptyArchive: true
       junit 'reports/junit.xml'
     }
-    success { echo '✅ Pipeline succeeded' }
-    failure { echo '❌ Pipeline failed—смотрите логи выше' }
+    success {
+      echo '✅ Pipeline succeeded'
+    }
+    failure {
+      echo '❌ Pipeline failed—смотрите логи выше'
+    }
   }
 }
