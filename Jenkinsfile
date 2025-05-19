@@ -1,9 +1,9 @@
 pipeline {
   agent { label 'windows' }
 
-  // Указываем короткий workspace через options, а не внутри agent
   options {
-    customWorkspace 'C:\\jenkins_ws\\URFU_AutoML'
+    // Устанавливаем короткий путь рабочей области через опцию ws
+    ws('C:\\jenkins_ws\\URFU_AutoML')
   }
 
   environment {
@@ -31,15 +31,16 @@ pipeline {
           python -m venv venv
           call venv\\Scripts\\activate
 
-          REM — понижаем pip до 24.0
+          REM — понижаем pip до 24.0, чтобы GE ставился корректно
           pip install --upgrade pip==24.0
 
-          REM — ставим зависимости + DVC + pytest
+          REM — устанавливаем зависимости + DVC + pytest
           pip install -r requirements.txt dvc[gdrive] pytest
-          REM — фиксируем версию GE
+
+          REM — фиксированная версия Great Expectations
           pip install great_expectations==0.18.21
 
-          REM — настраиваем DVC
+          REM — настраиваем DVC для работы через сервис-аккаунт
           dvc remote modify %DVC_REMOTE% gdrive_use_service_account true
           dvc remote modify %DVC_REMOTE% gdrive_service_account_json_file_path %GDRIVE_KEY%
         """
@@ -117,7 +118,11 @@ pipeline {
       archiveArtifacts artifacts: 'reports/**/*.xml', allowEmptyArchive: true
       junit 'reports/junit.xml'
     }
-    success { echo '✅ Pipeline succeeded' }
-    failure { echo '❌ Pipeline failed—смотрите логи выше' }
+    success {
+      echo '✅ Pipeline succeeded'
+    }
+    failure {
+      echo '❌ Pipeline failed—смотрите логи выше'
+    }
   }
 }
