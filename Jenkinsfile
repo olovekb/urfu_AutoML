@@ -32,8 +32,9 @@ pipeline {
           REM — понижаем pip до 24.0, чтобы GE ставился корректно
           pip install --upgrade pip==24.0
 
-          REM — устанавливаем зависимости + DVC + pytest
-          pip install -r requirements.txt dvc[gdrive] pytest
+          REM — фильтруем pywin32 из requirements и ставим остальные зависимости
+          findstr /V /R \"^pywin32==\" requirements.txt > filtered-requirements.txt
+          pip install --no-cache-dir -r filtered-requirements.txt dvc[gdrive] pytest
 
           REM — фиксированная версия Great Expectations
           pip install great_expectations==0.18.21
