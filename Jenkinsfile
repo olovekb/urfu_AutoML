@@ -74,14 +74,7 @@ pipeline {
       }
     }
 
-    stage('Data Quality Checks') {
-      steps {
-        bat """
-          call venv\\Scripts\\activate
-          great_expectations checkpoint run default
-        """
-      }
-    }
+    // Убрали стадию Data Quality Checks (GE) по просьбе
 
     stage('Unit & Data Tests') {
       steps {
