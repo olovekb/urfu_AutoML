@@ -4,10 +4,9 @@ pipeline {
   environment {
     // Имя DVC-remote из .dvc/config
     DVC_REMOTE      = 'storage'
-    // Docker registry и имя образа
-    DOCKER_REGISTRY = 'registry.example.com'
-    IMAGE_NAME      = "${DOCKER_REGISTRY}/urfu-automl-app"
-    // Jenkins-credential типа “Secret file” с вашим ключом
+    // Docker Hub namespace и имя образа
+    IMAGE_NAME      = "shoolife/urfu-automl-app"
+    // Jenkins-credential типа “Secret file” с вашим GDrive-SA
     GDRIVE_KEY      = credentials('gdrive-service-account-json')
   }
 
@@ -25,21 +24,12 @@ pipeline {
     stage('Setup Python & DVC') {
       steps {
         bat """
-          REM — создаём виртуальное окружение
           python -m venv venv
           call venv\\Scripts\\activate
-
-          REM — понижаем pip до 24.0, чтобы GE ставился корректно
           pip install --upgrade pip==24.0
-
-          REM — фильтруем pywin32 из requirements и ставим остальные зависимости
-          findstr /V /R \"^pywin32==\" requirements.txt > filtered-requirements.txt
+          findstr /V /R "^pywin32==" requirements.txt > filtered-requirements.txt
           pip install --no-cache-dir -r filtered-requirements.txt dvc[gdrive] pytest
-
-          REM — фиксированная версия Great Expectations
           pip install great_expectations==0.18.21
-
-          REM — настраиваем DVC для работы через сервис-аккаунт
           dvc remote modify %DVC_REMOTE% gdrive_use_service_account true
           dvc remote modify %DVC_REMOTE% gdrive_service_account_json_file_path %GDRIVE_KEY%
         """
@@ -75,8 +65,6 @@ pipeline {
       }
     }
 
-    // Убрали стадию Data Quality Checks (GE) по просьбе
-
     stage('Unit & Data Tests') {
       steps {
         bat """
@@ -92,6 +80,18 @@ pipeline {
           call venv\\Scripts\\activate
           dvc push -r %DVC_REMOTE%
         """
+      }
+    }
+
+    stage('Docker Login') {
+      steps {
+        withCredentials([usernamePassword(
+          credentialsId: 'docker-hub-credentials',
+          usernameVariable: 'DOCKER_USER',
+          passwordVariable: 'DOCKER_PASS'
+        )]) {
+          bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
+        }
       }
     }
 
