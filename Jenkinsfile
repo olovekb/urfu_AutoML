@@ -1,8 +1,8 @@
 pipeline {
-  // Переключаемся на Windows-нод с коротким путем рабочего каталога
-  agent {
-    label 'windows'
-    // Папка на корне диска, чтобы избежать длинных путей
+  agent { label 'windows' }
+
+  // Указываем короткий workspace через options, а не внутри agent
+  options {
     customWorkspace 'C:\\jenkins_ws\\URFU_AutoML'
   }
 
@@ -16,7 +16,6 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        // Клонируем нужную ветку в короткую папку
         checkout([
           $class: 'GitSCM',
           branches: [[name: '*/FinalTask-back']],
@@ -28,18 +27,19 @@ pipeline {
     stage('Setup Python & DVC') {
       steps {
         bat """
-          REM создаём и активируем виртуальное окружение
+          REM — создаём виртуальное окружение
           python -m venv venv
           call venv\\Scripts\\activate
 
-          REM понижаем pip, чтобы Great Expectations ставился корректно
+          REM — понижаем pip до 24.0
           pip install --upgrade pip==24.0
 
-          REM ставим зависимости + DVC + pytest + фиксированную версию GE
+          REM — ставим зависимости + DVC + pytest
           pip install -r requirements.txt dvc[gdrive] pytest
+          REM — фиксируем версию GE
           pip install great_expectations==0.18.21
 
-          REM настраиваем DVC для работы через сервис-аккаунт
+          REM — настраиваем DVC
           dvc remote modify %DVC_REMOTE% gdrive_use_service_account true
           dvc remote modify %DVC_REMOTE% gdrive_service_account_json_file_path %GDRIVE_KEY%
         """
@@ -117,11 +117,7 @@ pipeline {
       archiveArtifacts artifacts: 'reports/**/*.xml', allowEmptyArchive: true
       junit 'reports/junit.xml'
     }
-    success {
-      echo '✅ Pipeline succeeded'
-    }
-    failure {
-      echo '❌ Pipeline failed—смотрите логи выше'
-    }
+    success { echo '✅ Pipeline succeeded' }
+    failure { echo '❌ Pipeline failed—смотрите логи выше' }
   }
 }
