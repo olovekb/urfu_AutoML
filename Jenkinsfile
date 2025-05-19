@@ -1,9 +1,9 @@
 pipeline {
-  // Используем Docker-агент: внутри контейнера будет Linux + Python 3.9
+  // Пайплайн будет выполняться внутри Linux-контейнера python:3.9-slim
   agent {
     docker {
       image 'python:3.9-slim'
-      args  '-v /var/run/docker.sock:/var/run/docker.sock' // если нужен Docker внутри контейнера
+      args  '-v /var/run/docker.sock:/var/run/docker.sock'
     }
   }
 
@@ -17,11 +17,10 @@ pipeline {
   stages {
     stage('Checkout') {
       steps {
-        // Стандартный checkout вашего репо
         checkout([
           $class: 'GitSCM',
-          branches: [[name: '*/FinalTask-back']],
-          userRemoteConfigs: [[url: 'https://github.com/olovekb/urfu_AutoML.git']]
+          branches: [[ name: '*/FinalTask-back' ]],
+          userRemoteConfigs: [[ url: 'https://github.com/olovekb/urfu_AutoML.git' ]]
         ])
       }
     }
@@ -29,18 +28,17 @@ pipeline {
     stage('Setup Env & DVC') {
       steps {
         sh '''
+          # 1) создаём виртуальное окружение
           python3 -m venv venv
           . venv/bin/activate
+
+          # 2) обновляем pip и ставим зависимости + DVC
           pip install --upgrade pip
-          # Устанавливаем зависимости и инструменты
-          pip install -r requirements.txt \
-                      dvc[gdrive] \
-                      pytest
-          # Не устанавливаем GE пока — он тяжелый и ломается на Windows,
-          # но под Linux пойдет нормально. Можно раскомментировать:
-          # pip install great_expectations
-          dvc remote modify ${DVC_REMOTE} gdrive_use_service_account true
-          dvc remote modify ${DVC_REMOTE} gdrive_service_account_json_file_path $GDRIVE_KEY
+          pip install -r requirements.txt dvc[gdrive] pytest
+
+          # 3) настраиваем DVC remote для GDrive через сервис-аккаунт
+          dvc remote modify $DVC_REMOTE gdrive_use_service_account true
+          dvc remote modify $DVC_REMOTE gdrive_service_account_json_file_path $GDRIVE_KEY
         '''
       }
     }
@@ -49,7 +47,7 @@ pipeline {
       steps {
         sh '''
           . venv/bin/activate
-          dvc pull -r ${DVC_REMOTE}
+          dvc pull -r $DVC_REMOTE
         '''
       }
     }
@@ -78,7 +76,7 @@ pipeline {
       steps {
         sh '''
           . venv/bin/activate
-          # Если нужно — установите и запустите GE:
+          # Если нужен Great Expectations — раскомментируйте
           # pip install great_expectations
           # great_expectations checkpoint run default
         '''
@@ -98,7 +96,7 @@ pipeline {
       steps {
         sh '''
           . venv/bin/activate
-          dvc push -r ${DVC_REMOTE}
+          dvc push -r $DVC_REMOTE
         '''
       }
     }
@@ -106,10 +104,11 @@ pipeline {
     stage('Build & Push Docker') {
       steps {
         sh '''
+          # Собираем и пушим образ
           docker build \
             --build-arg VENV_DIR=venv \
-            -t ${IMAGE_NAME}:${BUILD_NUMBER} .
-          docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+            -t $IMAGE_NAME:$BUILD_NUMBER .
+          docker push $IMAGE_NAME:$BUILD_NUMBER
         '''
       }
     }
