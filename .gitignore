@@ -39,4 +39,4 @@ Thumbs.db
 *.swp
 
 # Models managed by DVC
-models/model.pkl
+models/*.pkl
