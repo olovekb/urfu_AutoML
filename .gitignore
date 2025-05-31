@@ -37,3 +37,6 @@ Thumbs.db
 # Environment and IDE files
 .vscode/
 *.swp
+
+# Models managed by DVC
+models/model.pkl

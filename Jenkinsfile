@@ -65,6 +65,17 @@ pipeline {
       }
     }
 
+    stage('Train & Save Model') {
+      steps {
+        bat """
+          call venv\\Scripts\\activate
+          python src\\model_preparation.py
+          python src\\model_testing.py
+          dvc add models\\model.pkl
+        """
+      }
+    }
+
     stage('Unit & Data Tests') {
       steps {
         bat """

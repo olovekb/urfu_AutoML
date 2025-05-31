@@ -26,4 +26,4 @@ test_data[['humidity']] = scaler_humidity.transform(test_data[['humidity']])
 train_data.to_csv('./data/train/train_data_scaled.csv', index=False)
 test_data.to_csv('./data/test/test_data_scaled.csv', index=False)
 
-print("Data preprocessing completed.")
+print("Предварительная обработка данных завершена.")
