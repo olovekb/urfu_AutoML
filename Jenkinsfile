@@ -89,7 +89,7 @@ pipeline {
       steps {
         bat """
           call venv\\Scripts\\activate
-          dvc push -r %DVC_REMOTE%
+          dvc pull -r %DVC_REMOTE% --force
         """
       }
     }
