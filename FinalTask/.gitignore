@@ -1,0 +1,43 @@
+# Virtual environment and dependency files
+venv/
+.env
+
+# Python cache files
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# DVC internal caches (keep .dvc/config and .dvcignore tracked)
+.dvc/cache/
+.dvc/tmp/
+
+# Data files managed by DVC
+# Raw and processed CSVs should be versioned by DVC, not Git
+data/**/train_data.csv
+data/**/test_data.csv
+data/**/train_data_scaled.csv
+data/**/test_data_scaled.csv
+data/**/*_scaled.csv
+
+# Models managed by DVC
+models/*.pkl
+
+# CI/CD service-account keys or other secrets
+ci/*.json
+
+# Logs and reports
+*.log
+reports/
+coverage/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Environment and IDE files
+.vscode/
+*.swp
+
+# Models managed by DVC
+models/*.pkl
